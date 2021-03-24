@@ -30,65 +30,76 @@ using namespace std;
 #define ERAT 0x8
 
 /*the room is a struct to save the relevant coordinates and leghts of a room*/
-typedef struct room
+class room
 {
+public:
 	int xloc;
 	int yloc;
 	int xlen;
 	int ylen;
-}room;
+};
 /*node - this contains x and y coordinates and address of next and prev node;*/
-typedef struct node {
+class node {
+public:
 	int xcoor;
 	int ycoor;
-	struct node* prev;
-	struct node* next;
-} node;
+	node* prev;
+	node* next;
+};
 /*node_heap - this contains the head node address (last node entered), the tail node address (first node entered) and the size of the node_heap*/
-typedef struct node_heap {
+class node_heap {
+public:
 	node* head;
 	node* tail;
 	int size;
-} node_heap;
+};
 /*neighbourhood - this contains an 8x2 array that contains all possible neighour's coordinates (x,y) and the size - num of neighours*/
-typedef struct neighbourhood{
-int store[8][2];
-int size;
-}neighbourhood;
+class neighbourhood{
+public:
+	int store[8][2];
+	int size;
+};
 /*This struct will contain all the data we will need for pc*/
-typedef struct PC{
-int speed;
-int x;
-int y;
-}PC;
+class PC{
+public:
+	int speed;
+	int x;
+	int y;
+};
 /*ALL non-pc players data will be stored here*/
-typedef struct NPC{
-uint8_t character;
-int x;
-int y;
-int speed;
-int ifPCseen;
-int PCx;
-int PCy;
-}NPC;
+class NPC{
+public:
+	uint8_t character;
+	int x;
+	int y;
+	int speed;
+	int ifPCseen;
+	int PCx;
+	int PCy;
+};
 /*These nodes store all the players and their data needed to put them on the heap*/
-typedef struct player_node{
-int ifPC;
-PC* pc;
-NPC* npc;
-int next_turn;
-int when_initiated;
-int alive;
-struct player_node* prev;
-struct player_node* next;
+class player_node{
+public:
+	int ifPC;
+	PC* pc;
+	NPC* npc;
+	int next_turn;
+	int when_initiated;
+	int alive;
+	player_node* prev;
+	player_node* next;
 
-}player_node;
+};
 /*This merely contains the head and tail player_node of the heap. It is used to access all the players*/
-typedef struct player_node_heap {
+class player_node_heap {
+public:
 	player_node* head;
 	player_node* tail;
 	//int size;
-} player_node_heap;
+};
+
+int print_teleport(PC* pc, int* x, int* y);
+int print_dungeon_limited(PC* pc);
 
 int random_generator(player_node_heap** h, PC** pc, int nummon, room** rooms);
 int getmonsterlist(player_node_heap* h);
@@ -128,6 +139,8 @@ int hardness[xlenMax][ylenMax];
 int difficulty[xlenMax][ylenMax];//this will be used to save data for distance of non-tunnelers
 int difficulty_t[xlenMax][ylenMax];//this is to save data for tunnelers
 uint8_t shortPathRecord[xlenMax][ylenMax];//this keeps record of what is on the queue and what isn't for djik* algo
+int visible;
+
 
 player_node *grid_players[xlenMax][ylenMax];//this will be used to store pointers of all the player nodes
 
@@ -141,6 +154,7 @@ int main(int argc, char* argv[])
 	int numRooms, numUpstairs, numDownstairs;
 	uint8_t xPCpos, yPCpos;
 
+	visible = 0;
 
 
 	room *rooms;
@@ -772,6 +786,7 @@ int print_dungeon()
 	int i, j, x;//x will serve as  the top offset
 	char npc2;
 	x=1;
+
 	//for (i = 0; i < xlenMax; i++) {printf("-");}
 	//printf("\n");
 
@@ -808,6 +823,248 @@ int print_dungeon()
 	//for (i = 0; i < xlenMax; i++) {printf("-");}
 	//printf("\n\n\n");
 	return 0;
+}
+/* This will only print the dungeon visible to the PC if visible is true, else, it would print regular dungeon*/
+int print_dungeon_limited(PC* pc)
+{
+	int i, j, x;//x will serve as  the top offset
+	char npc2;
+	x=1;
+	//for (i = 0; i < xlenMax; i++) {printf("-");}
+	//printf("\n");
+	if (visible)
+	{
+		for (i = 0; i < ylenMax; i++)
+		{
+			//printf("|");
+			for (j = 0; j < xlenMax; j++)
+			{
+				mvaddch(i+x,j, grid[j][i]);
+				//if (grid_players[j][i]==NULL) printf("%c", grid[j][i]);
+				if (grid_players[j][i]==NULL) mvaddch( i+x,j, grid[j][i]);
+				else
+				{
+					if (grid_players[j][i]->ifPC==1) mvaddch(i+x,j, '@');//printf("@");
+					else
+					{
+						//char* store = sprintf("%x",(grid_players[j][i]->npc->character));
+						int npc = grid_players[j][i]->npc->character;
+						if (npc <= 9){
+						npc2=npc+'0';
+						mvaddch(i+x,j, npc2);
+						}
+						else{
+							npc2 = npc+'a'-10;
+							mvaddch(i+x,j, npc2);
+						}
+					}
+				}
+			}
+			//printf("\n");
+		}
+		refresh();
+	}
+	else
+	{
+		//first we make sure everything is dark
+		for (i = 0; i < ylenMax; i++)
+		{
+			for (j = 0; j < xlenMax; j++)
+			{
+				mvaddch(i+x,j, ' ');
+			}
+		}
+
+		int Ymin = (0 < ((pc->y) - 2)) ? (pc->y - 2) : 0;
+		int Xmin = (0 < ((pc->x) - 2)) ? (pc->x - 2) : 0;
+		int Ymax = ((ylenMax-1) > ((pc->y) + 2)) ? (pc->y + 2) : (ylenMax-1);
+		int Xmax = ((xlenMax-1) > ((pc->x) + 2)) ? (pc->x + 2) : (xlenMax-1);
+
+		for (i = Ymin; i <= Ymax; i++)
+		{
+			for (j = Xmin; j <= Xmax; j++)
+			{
+				if (grid_players[j][i]==NULL) mvaddch( i+x,j, grid[j][i]);
+				else
+				{
+					if (grid_players[j][i]->ifPC==1) mvaddch(i+x,j, '@');//printf("@");
+					else
+					{
+						//char* store = sprintf("%x",(grid_players[j][i]->npc->character));
+						int npc = grid_players[j][i]->npc->character;
+						if (npc <= 9){
+						npc2=npc+'0';
+						mvaddch(i+x,j, npc2);
+						}
+						else{
+							npc2 = npc+'a'-10;
+							mvaddch(i+x,j, npc2);
+						}
+					}
+				}
+			}
+		}
+
+		refresh();
+
+
+	}
+
+
+	//for (i = 0; i < xlenMax; i++) {printf("-");}
+	//printf("\n\n\n");
+	return 0;
+}
+
+/*This should print the whole dungron alongside printing the estrick where we might want to teleport the PC*/
+int print_teleport(PC* pc, int* x, int* y)
+{
+	int i, j;
+	char npc2;
+	int offset=1;
+	//for (i = 0; i < xlenMax; i++) {printf("-");}
+	//printf("\n");
+	if (visible)
+	{
+		for (i = 0; i < ylenMax; i++)
+		{
+			//printf("|");
+			for (j = 0; j < xlenMax; j++)
+			{
+				mvaddch(i+offset,j, grid[j][i]);
+				//if (grid_players[j][i]==NULL) printf("%c", grid[j][i]);
+				if (grid_players[j][i]==NULL) mvaddch( i+offset,j, grid[j][i]);
+				else
+				{
+					if (grid_players[j][i]->ifPC==1) mvaddch(i+offset,j, '@');//printf("@");
+					else
+					{
+						//char* store = sprintf("%x",(grid_players[j][i]->npc->character));
+						int npc = grid_players[j][i]->npc->character;
+						if (npc <= 9){
+						npc2=npc+'0';
+						mvaddch(i+offset,j, npc2);
+						}
+						else{
+							npc2 = npc+'a'-10;
+							mvaddch(i+offset,j, npc2);
+						}
+					}
+				}
+			}
+			//printf("\n");
+		}
+
+	}
+	else
+	{
+		//first we make sure everything is dark
+		for (i = 0; i < ylenMax; i++)
+		{
+			for (j = 0; j < xlenMax; j++)
+			{
+				mvaddch(i+offset,j, ' ');
+			}
+		}
+
+		int Ymin = (0 < ((pc->y) - 2)) ? (pc->y - 2) : 0;
+		int Xmin = (0 < ((pc->x) - 2)) ? (pc->x - 2) : 0;
+		int Ymax = ((ylenMax-1) > ((pc->y) + 2)) ? (pc->y + 2) : (ylenMax-1);
+		int Xmax = ((xlenMax-1) > ((pc->x) + 2)) ? (pc->x + 2) : (xlenMax-1);
+
+		for (i = Ymin; i <= Ymax; i++)
+		{
+			for (j = Xmin; j <= Xmax; j++)
+			{
+				if (grid_players[j][i]==NULL) mvaddch( i+offset,j, grid[j][i]);
+				else
+				{
+					if (grid_players[j][i]->ifPC==1) mvaddch(i+offset,j, '@');//printf("@");
+					else
+					{
+						//char* store = sprintf("%x",(grid_players[j][i]->npc->character));
+						int npc = grid_players[j][i]->npc->character;
+						if (npc <= 9){
+						npc2=npc+'0';
+						mvaddch(i+offset,j, npc2);
+						}
+						else{
+							npc2 = npc+'a'-10;
+							mvaddch(i+offset,j, npc2);
+						}
+					}
+				}
+			}
+		}
+
+	}
+
+	mvaddch( *y+offset,*x, '*');
+	refresh();
+	return 0;
+}
+
+int teleport_controller(PC* pc, int& x, int& y)
+{
+	start:
+	print_teleport(pc, &x, &y);
+	chtype ch = getch();
+
+	if (ch == '8')
+	{
+		if (y!=0) y--;
+		goto start;
+	}
+	else if (ch == '7')
+	{
+		if (y!=0) y--;
+		if (x!=0) x--;
+		goto start;
+	}
+	else if (ch == '9')
+	{
+		if (y!=0) y--;
+		if (x!=(xlenMax-1)) x++;
+		goto start;
+	}
+	else if (ch == '6')
+	{
+		if (x!=(xlenMax-1)) x++;
+		goto start;
+	}
+	else if (ch == '1')
+	{
+		if (x!=0) x--;
+		if (y!=(ylenMax-1)) y++;
+		goto start;
+	}
+	else if (ch == '2')
+	{
+		if (y!=(ylenMax-1)) y++;
+		goto start;
+	}
+	else if (ch == '3')
+	{
+		if (y!=(ylenMax-1)) y++;
+		if (x!=(xlenMax-1)) x++;
+		goto start;
+	}
+	else if (ch == '4')
+	{
+		if (x!=0) x--;
+		goto start;
+	}
+	else if (ch == 'g')
+	{
+		if (grid[x][y]==' ')
+		{
+			hardness[x][y] = 0;
+			grid[x][y] = '#';
+		}
+		return 0;
+	}
+	else goto start;
+
 }
 
 
@@ -1293,7 +1550,7 @@ int next_move(player_node *pn, PC* pc, int* ifend, player_node_heap* h)
 	if (pn->ifPC==1) {
 		//printf("\nPC's turn, score of %d \n", pn->next_turn);
 		int nextx, nexty;
-		print_dungeon();
+		print_dungeon_limited(pn->pc);
 		getkey(pn->pc->x, pn->pc->y, &nextx, &nexty, ifend, h);
 
 		//boundary check
@@ -1321,7 +1578,7 @@ int next_move(player_node *pn, PC* pc, int* ifend, player_node_heap* h)
 
 		}
 		pn->next_turn = pn->next_turn + (1000/(pn->pc->speed));
-		print_dungeon();
+		print_dungeon_limited(pn->pc);
 		//usleep(10000);
 
 		return 0;
@@ -1565,6 +1822,7 @@ int print_end(int success)
 /*This method was added to the nex_move method, where to determine next move, get key fetches a key and reacts accordingly*/
 int getkey(int prevx,int prevy, int *x,int *y, int *endif, player_node_heap* h)
 {
+	start:
 	int i;
 	chtype ch = getch();
 
@@ -1586,6 +1844,22 @@ int getkey(int prevx,int prevy, int *x,int *y, int *endif, player_node_heap* h)
 	else if (ch=='9'||ch=='u') {--*y; ++*x;}
 	else if (ch=='q'||ch=='Q') {*endif = 5;}
 	else if (ch=='m');
+	else if (ch=='g')
+	{
+		player_node* current = (h->head);
+		while (!(current->ifPC)) current=current->next;
+		teleport_controller(current->pc, *x, *y);
+		/*dosomething();*/
+		/*goto start;*/
+	}
+	else if (ch=='f')
+	{
+		visible = visible ? 0 : 1;
+		player_node* current = (h->head);
+		while (!(current->ifPC)) current=current->next;
+		print_dungeon_limited(current->pc);
+		goto start;
+	}
 	else if (ch=='<')
 	{
 		if (grid[prevx][prevy]=='<')
@@ -1610,8 +1884,8 @@ int getkey(int prevx,int prevy, int *x,int *y, int *endif, player_node_heap* h)
 		string lose = "THE KEY WAS UNRECOGNISED, TRY AGAIN!.";
 		for (i = 0; lose[i]!='.'; i++) mvaddch(0, i, lose[i]);
 		refresh();
-
-		getkey(prevx, prevy, x,y, endif,h);
+		goto start;
+		//getkey(prevx, prevy, x,y, endif,h);
 	}
 	//boundary check - pc will get an error if it hits the boundary and and an opportunity to put in another key////
 	if (*x < 0 || *x >= xlenMax || *y < 0 || *y >= ylenMax)//boundary check
@@ -1622,7 +1896,8 @@ int getkey(int prevx,int prevy, int *x,int *y, int *endif, player_node_heap* h)
 		for (i = 0; lose[i]!='.'; i++) mvaddch(0, i, lose[i]);
 		refresh();
 
-		getkey(prevx, prevy, x,y, endif,h);
+		goto start;
+		//getkey(prevx, prevy, x,y, endif,h);
 	}
 	//if we come across a wall and since the player cannot tunnel, we ask for another key///
 	if(grid[*x][*y]==' ')
@@ -1633,12 +1908,14 @@ int getkey(int prevx,int prevy, int *x,int *y, int *endif, player_node_heap* h)
 		for (i = 0; lose[i]!='.'; i++) mvaddch(0, i, lose[i]);
 		refresh();
 
-		getkey(prevx, prevy, x,y, endif,h);
+		goto start;
+		//getkey(prevx, prevy, x,y, endif,h);
 	}
 	if (ch=='m')
 	{
 		getmonsterlist(h);
-		getkey(prevx, prevy, x,y, endif,h);
+		//getkey(prevx, prevy, x,y, endif,h);
+		goto start;
 	}
 
 	return 0;
@@ -1780,7 +2057,7 @@ int getmonsterlist(player_node_heap* h)
 
 		refresh();
 		int key = getch();
-		if (key==27) {print_dungeon(); break;}//if ESC pressed
+		if (key==27) {print_dungeon_limited(pc); break;}//if ESC pressed
 		else if (key == 259) //if UP key is pressed
 		{
 			if (current != NULL && current->prev) current = current->prev;
