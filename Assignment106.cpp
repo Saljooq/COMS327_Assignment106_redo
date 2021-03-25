@@ -825,7 +825,7 @@ int print_dungeon()
 	//printf("\n\n\n");
 	return 0;
 }
-/* This will only print the dungeon visible to the PC if visible is true, else, it would print regular dungeon*/
+/* This will only print the dungeon close to the PC if visible is false or 0, else, it would print regular dungeon*/
 int print_dungeon_limited(PC* pc)
 {
 	int i, j, x;//x will serve as  the top offset
@@ -875,7 +875,7 @@ int print_dungeon_limited(PC* pc)
 				mvaddch(i+x,j, ' ');
 			}
 		}
-
+		//next we figure out the limits of the 5x5 matrix around the pc
 		int Ymin = (0 < ((pc->y) - 2)) ? (pc->y - 2) : 0;
 		int Xmin = (0 < ((pc->x) - 2)) ? (pc->x - 2) : 0;
 		int Ymax = ((ylenMax-1) > ((pc->y) + 2)) ? (pc->y + 2) : (ylenMax-1);
@@ -1004,53 +1004,53 @@ int print_teleport(PC* pc, int* x, int* y)
 	refresh();
 	return 0;
 }
-
+/*This will be used to control the esterik '*' once we are in the teleport mode after pressing 'g', pressing 'g' again is the only way to leave*/
 int teleport_controller(PC* pc, int& x, int& y)
 {
 	start:
 	print_teleport(pc, &x, &y);
 	chtype ch = getch();
 
-	if (ch == '8')
+	if (ch == '8'||ch == 'k')
 	{
 		if (y!=0) y--;
 		goto start;
 	}
-	else if (ch == '7')
+	else if (ch == '7'||ch == 'y')
 	{
 		if (y!=0) y--;
 		if (x!=0) x--;
 		goto start;
 	}
-	else if (ch == '9')
+	else if (ch == '9'||ch == 'u')
 	{
 		if (y!=0) y--;
 		if (x!=(xlenMax-1)) x++;
 		goto start;
 	}
-	else if (ch == '6')
+	else if (ch == '6'||ch == 'l')
 	{
 		if (x!=(xlenMax-1)) x++;
 		goto start;
 	}
-	else if (ch == '1')
+	else if (ch == '1'||ch == 'b')
 	{
 		if (x!=0) x--;
 		if (y!=(ylenMax-1)) y++;
 		goto start;
 	}
-	else if (ch == '2')
+	else if (ch == '2'||ch == 'j')
 	{
 		if (y!=(ylenMax-1)) y++;
 		goto start;
 	}
-	else if (ch == '3')
+	else if (ch == '3'||ch == 'n')
 	{
 		if (y!=(ylenMax-1)) y++;
 		if (x!=(xlenMax-1)) x++;
 		goto start;
 	}
-	else if (ch == '4')
+	else if (ch == '4'||ch == 'h')
 	{
 		if (x!=0) x--;
 		goto start;
