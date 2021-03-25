@@ -98,6 +98,7 @@ public:
 	//int size;
 };
 
+int teleport_controller(PC* pc, int& x, int& y);
 int print_teleport(PC* pc, int* x, int* y);
 int print_dungeon_limited(PC* pc);
 
@@ -2178,7 +2179,7 @@ int random_generator(player_node_heap** h, PC** pc, int nummon, room** rooms)
 
 
 	//here we randomise the upwards and downward staircases and insert them wherever the random coordinates and its horizontal neighbours are part of room
-	int numUpstairs, numDownstairs;
+	//int numUpstairs, numDownstairs;
 	for (i = 0; i < 2; i++)
 	{
 		//first iteration adds random number of '<' to the grid, second adds '<'
@@ -2190,13 +2191,13 @@ int random_generator(player_node_heap** h, PC** pc, int nummon, room** rooms)
 		if (i == 0)
 		{
 			staircase = '<';
-			numUpstairs = numStairs;
+			//numUpstairs = numStairs;
 
 		}
 		else
 		{
 			staircase = '>';
-			numDownstairs = numStairs;
+			//numDownstairs = numStairs;
 		}
 
 		for (j = 0; j < numStairs; j++)

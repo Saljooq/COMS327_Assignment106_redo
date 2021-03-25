@@ -1,11 +1,11 @@
-Assignment105: Assignment105.cpp
-	g++ Assignment105.cpp -lcurses -o Assignment105
+Assignment105: Assignment106.cpp
+	g++ Assignment106.cpp -lcurses -o Assignment106
 
-debug: Assignment105.c
-	gcc -o Assignment105 -lcurses -ggdb3 Assignment105.c
+debug: Assignment106.cpp
+	g++ Assignment106.cpp -o Assignment106 -lcurses -g 
 
 clean:
-	rm -f Assignment105
+	rm -f Assignment106
 
 test1:
 	gcc test.c -lcurses -o test
